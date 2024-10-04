@@ -152,7 +152,7 @@ def UploadFashion():
     # user registration 
 @app.route('/register')
 def Register():
-    return "This is the registration page"
+    return render_template()
     
 @app.route('/about')
 def Aboutpage():
