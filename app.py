@@ -150,9 +150,33 @@ def UploadFashion():
         return render_template('uploadfashion.html', error="Please add a Fashion product")
     
     # user registration 
-@app.route('/register')
+@app.route('/register', methods = ['POST', 'GET'])
 def Register():
-    return render_template()
+    if request.method == 'POST':    # user can add the products 
+     username = request.form['username']
+     email = request.form['email']
+     gender = request.form['gender']
+     phone = request.form['phone']
+     password = request.form['password']
+
+     # connect to db 
+     connection = pymysql.connect(host='localhost', user='root', password='', database='FrontIt')   
+      # create a cursor 
+     cursor = connection.cursor()
+     sql = "INSERT INTO users (username, email, gender, phone, password) values (%s, %s, %s, %s, %s)"
+     data = (username, email, gender, phone, password)
+
+        # execute
+     cursor.execute(sql, data)
+     
+        #  save the changes
+     connection.commit()
+
+     return render_template('register.html', message = "Your Registration was successful")
+    
+    else:
+       return render_template('register.html', error="Please register")
+
     
 @app.route('/about')
 def Aboutpage():
