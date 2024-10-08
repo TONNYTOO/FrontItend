@@ -1,7 +1,12 @@
-from flask import *
+from flask import * 
 import pymysql
+from functions import *
+from mpesa import *
 
 app = Flask(__name__)
+
+# session 
+app.secret_key = "trobrtretgher"
 
 @app.route('/')
 def HomePage():
@@ -150,46 +155,94 @@ def UploadFashion():
         return render_template('uploadfashion.html', error="Please add a Fashion product")
     
     # user registration 
-@app.route('/register', methods = ['POST', 'GET'])
+@app.route('/register', methods=['POST', 'GET'])
 def Register():
     if request.method == 'POST':    # user can add the products 
-     username = request.form['username']
-     email = request.form['email']
-     gender = request.form['gender']
-     phone = request.form['phone']
-     password = request.form['password']
+        username = request.form['username']
+        email = request.form['email']
+        gender = request.form['gender']
+        phone = request.form['phone']
+        password = request.form['password']
 
-     # connect to db 
-     connection = pymysql.connect(host='localhost', user='root', password='', database='FrontIt')   
-      # create a cursor 
-     cursor = connection.cursor()
-     sql = "INSERT INTO users (username, email, gender, phone, password) values (%s, %s, %s, %s, %s)"
-     data = (username, email, gender, phone, password)
+        # Validate if any field is empty
+        if not username or not email or not password or not phone:
+            return render_template('register.html', error="Please fill out all fields")
 
-        # execute
-     cursor.execute(sql, data)
-     
-        #  save the changes
-     connection.commit()
+    
 
-     return render_template('register.html', message = "Your Registration was successful")
+        # Connect to the database
+        connection = pymysql.connect(host='localhost', user='root', password='', database='FrontIt')   
+        cursor = connection.cursor()
+
+        # Insert the user data into the users table
+        sql = "INSERT INTO users (username, email, gender, phone, password) VALUES (%s, %s, %s, %s, %s)"
+        data = (username, email, gender, phone, password)
+
+        try:
+            cursor.execute(sql, data)
+            connection.commit()  # Commit the changes to the database
+            return render_template('register.html', message="Your Registration was successful")
+        except Exception as e:
+            connection.rollback()  # Rollback in case of error
+            return render_template('register.html', error=f"Registration failed: {str(e)}")
+        finally:
+            cursor.close()
+            connection.close()
     
     else:
-       return render_template('register.html', error="Please register")
+        return render_template('register.html', error="Please register")
+    
+    
+@app.route('/login', methods = ['POST', 'GET'])
+def LoginPage():
+    if request.method == 'POST':    # user can add the products 
+        email = request.form['email']
+        password = request.form['password']
+
+        connection = pymysql.connect(host='localhost', user='root', password='', database='FrontIt') 
+        cursor = connection.cursor()
+        # check if user with email exist in the db
+        sql = "select * from users where email = %s and password = %s"
+        data = (email, password)
+
+        cursor.execute(sql, data)
+        #  check if any result is found 
+        if cursor.rowcount == 0:
+            return render_template('login.html', error = "invalid credentials")
+
+
+        else:
+            session['key'] = email
+
+            return redirect('/')
+    else:
+        return render_template('login.html')
+    
+    #mpesa
+    # implement STK PUSH 
+@app.route('/mpesa', methods = ['POST'])
+def mpesa():
+    phone = request.form['phone']
+    amount = request.form['amount']
+
+    # use mpesa_payment function mpesa.py
+    # it accepts the phone and amount as arguments
+    mpesa_payment(amount, phone)
+
+    return '<h1>Please complete in your Phone</h1>'  \
+    '<a href="/" class="btn btn-dark btn-sm"> Go back to Products</a>'
 
     
 @app.route('/about')
 def Aboutpage():
     return "This is about us"
 
-@app.route('/login')
-def LoginPage():
-    return "Please login here"
-
 @app.route('/logout')
-def LoginOut():
-    return "Logout Page"
+def Logout():
+    session.clear()
+    return redirect('/login') 
+
 
 if __name__ == '__main__':
 
-    app.run(debug=True, port=89800)
+    app.run(debug=True, port=8900)

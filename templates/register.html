@@ -10,7 +10,8 @@
 <body>
 
     {% include 'navbar.html'%}
-
+    <div class="container d-flex-center">
+<div class="col-md-6 mb-4">
     <form action="/register" method="post">
         <label for="">Username</label>
         <input type="text" class="form-control" name="username" required>
@@ -41,5 +42,7 @@
           <button type="submit" class="btn btn-primary">Register</button>
         </div>
   </form>
+</div>
+</div>
 </body>
 </html>
